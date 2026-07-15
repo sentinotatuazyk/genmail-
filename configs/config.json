@@ -1,0 +1,19 @@
+{
+  "templates_file_path": "configs/templates.json",
+  "new_reservation_name": "rezerwacja preset",
+  "update_reservation_name": "aktualizacja preset",
+  "delete_reservation_name": "odwołanie preset",
+  "custom_templates_name": [],
+  "placeholders": [
+    {
+      "name": "creds",
+      "truevalue": "",
+      "example": "Jan Kowalski"
+    },
+    {
+      "name": "signature",
+      "truevalue": "",
+      "example": "Twoja firma"
+    }
+  ]
+}

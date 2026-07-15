@@ -1,0 +1,90 @@
+{
+   "templates": [
+        {
+            "label": "rezerwacja preset",
+            "subject": "Rezerwacja {{tag}}",
+            "body": "Dzień dobry,\n\n Proszę o rezerwację na wycieczke {{tag}} w terminie {{date}}.\n\n{{clients}} \n\nBardzo proszę o przesłanie potwierdzenia rezerwacji.\n\n Z poważaniem,\n===================\n {{creds}}\n{{signature}}",
+            "placeholders": [
+                {
+                    "name": "tag",
+                    "truevalue": "",
+                    "example": "Wycieczka 1"
+                },
+                {
+                    "name": "date",
+                    "truevalue": "",
+                    "example": "2023-10-15"
+                },
+                {
+                    "name": "clients",
+                    "truevalue": "",
+                    "example": "Jan Kowalski, Anna Nowak"
+                },
+                {
+                    "name": "creds",
+                    "truevalue": "",
+                    "example": "Jan Kowalski"
+                },
+                {
+                    "name": "signature",
+                    "truevalue": "",
+                    "example": "Twoja firma"
+                }
+            ]
+        },
+        {
+            "label": "aktualizacja preset",
+            "subject": "Aktualizacja rezerwacji {{tag}}",
+            "body": "Dzień dobry,\n\n Proszę o aktualizację rezerwacji na wycieczke {{tag}} w terminie {{date}}.\n\n{{clients}} \n\nBardzo proszę o przesłanie potwierdzenia rezerwacji.\n\n Z poważaniem,\n===================\n {{creds}}\n{{signature}}",
+            "placeholders": [
+                {
+                    "name": "tag",
+                    "truevalue": "",
+                    "example": "Wycieczka 1"
+                },
+                {
+                    "name": "date",
+                    "truevalue": "",
+                    "example": "2023-10-15"
+                },
+                {
+                    "name": "clients",
+                    "truevalue": "",
+                    "example": "Jan Kowalski, Anna Nowak"
+                },
+                {
+                    "name": "creds",
+                    "truevalue": "",
+                    "example": "Jan Kowalski"
+                },
+                {
+                    "name": "signature",
+                    "truevalue": "",
+                    "example": "Twoja firma"
+                }
+            ]
+        },
+        {
+            "label": "odwołanie preset",
+            "subject": "Odwołanie rezerwacji {{tag}}",
+            "body": "Dzień dobry,\n\n Proszę o odwołanie rezerwacji na wycieczke {{tag}}. \n\nBardzo proszę o przesłanie potwierdzenia odwołania rezerwacji.\n\n Z poważaniem,\n===================\n {{creds}}\n{{signature}}",
+            "placeholders": [
+                {
+                    "name": "tag",
+                    "truevalue": "",
+                    "example": "Wycieczka 1"
+                },
+                {
+                    "name": "creds",
+                    "truevalue": "",
+                    "example": "Jan Kowalski"
+                },
+                {
+                    "name": "signature",
+                    "truevalue": "",
+                    "example": "Twoja firma"
+                }
+            ]
+        }
+   ]
+}
