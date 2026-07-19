@@ -20,7 +20,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         &window.title,
         option,
-        Box::new(|_cc| Ok(Box::<App>::default())),
+        Box::new(|_cc| Box::<App>::default()),
     )
 
 }

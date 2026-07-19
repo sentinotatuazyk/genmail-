@@ -2,11 +2,12 @@ mod configshandler;
 
 use std::{default, fs};
 use eframe::egui::{self, Pos2};
-use configshandler::{Config, Template, DefaultTemplate, load_config, load_templates, find_template_by_label};
+use configshandler::{Config, Template, DefaultTemplate, load_config, load_templates, find_template_by_label, configs_dir};
+
 
 enum Screen {
     Home,
-    Configuration{
+    FirstConfiguration{
         editor_text: String,
         editor_body: String,
         editor_label: String,
@@ -20,61 +21,43 @@ pub struct App{
     // pub sectors: Vec<Sector>,
 }
 
-
 impl Default for App {
     fn default() -> Self {
-        let mut screen;
-        // let mut sectors: Vec<Sector> = Vec::new();
-        
+        let config_path = configshandler::configs_dir().join("config.json");
+        let templates_path = configshandler::configs_dir().join("templates.json");
 
-        if fs::metadata("configs/config.json").is_err() {
-            configshandler::create_default_config("configs/config.json")
+        // Sprawdzamy i zapamiętujemy TERAZ, zanim cokolwiek utworzymy
+        let config_existed = fs::metadata(&config_path).is_ok();
+
+        if !config_existed {
+            configshandler::create_default_config(&config_path)
                 .expect("Failed to create default config");
-            screen = Screen::Configuration{
-                editor_text: String::new(),
-                editor_body: String::new(),
-                editor_label: String::new(),
-                default_template: DefaultTemplate {
-                    new_reservation: Template::none(),
-                    update_reservation: Template::none(),
-                    delete_reservation: Template::none(),
-                },
-            };
-        } else {
-            screen = Screen::Home;
         }
 
-        let config: Config = load_config("configs/config.json").expect("Failed to load config");
-        let templates: Vec<Template> = load_templates("configs/templates.json").expect("Failed to load templates");
-        let default_template: DefaultTemplate;
-        default_template = DefaultTemplate {
-            new_reservation: find_template_by_label(&templates, &config.new_reservation_name).cloned().expect("Default template 'new_reservation' not found"),
-            update_reservation: find_template_by_label(&templates, &config.update_reservation_name).cloned().expect("Default template 'update_reservation' not found"),
-            delete_reservation: find_template_by_label(&templates, &config.delete_reservation_name).cloned().expect("Default template 'delete_reservation' not found"),
+        let config: Config = load_config(&config_path).expect("Failed to load config");
+        let templates: Vec<Template> = load_templates(&templates_path).expect("Failed to load templates");
+
+        let default_template = DefaultTemplate {
+            new_reservation: find_template_by_label(&templates, &config.new_reservation_name)
+                .cloned().expect("Default template 'new_reservation' not found"),
+            update_reservation: find_template_by_label(&templates, &config.update_reservation_name)
+                .cloned().expect("Default template 'update_reservation' not found"),
+            delete_reservation: find_template_by_label(&templates, &config.delete_reservation_name)
+                .cloned().expect("Default template 'delete_reservation' not found"),
         };
 
-        screen = Screen::Configuration{
+        let screen = if config_existed {
+            Screen::Home
+        } else {
+            Screen::FirstConfiguration {
                 editor_text: String::new(),
                 editor_body: String::new(),
                 editor_label: String::new(),
-                default_template: default_template.clone(),
-                };
+                default_template,
+            }
+        };
 
-        match screen {
-            Screen::Configuration { .. } => {
-                Self {
-                    screen,
-                    config: config.clone(),
-                }
-            }
-            Screen::Home => {
-                Self {
-                    screen,
-                    config: config.clone(),
-                }
-            }
-        }
-        
+        Self { screen, config }
     }
 }
 
@@ -88,7 +71,7 @@ impl eframe::App for App {
                 });
             }
             // Ekran konfiguracji, który wyświetla szablony rezerwacji i pozwala użytkownikowi wybrać domyślny szablon
-            Screen::Configuration { editor_text, editor_body, editor_label, default_template, .. } => {
+            Screen::FirstConfiguration { editor_text, editor_body, editor_label, default_template, .. } => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     let heading = ui.heading("Hej, wybierz szablon rezerwacji, który chcesz wybrać jako domyślny");
                     
@@ -108,7 +91,7 @@ impl eframe::App for App {
                             .inner_margin(egui::Margin::same(12.0))
                             .show(ui, |ui| {
                                 ui.set_min_width(200.0);
-                                ui.label("Panel lewy");
+                                ui.label(format!("Tytuł:\n{}\n\nTreść:\n{}",default_template.new_reservation.subject, default_template.new_reservation.body));
                             });
 
                       // Panel prawy - edytor tekstu
@@ -122,11 +105,11 @@ impl eframe::App for App {
                                  egui::TextEdit::multiline(editor_text)
                                      .desired_width(f32::INFINITY)
                                      .desired_rows(15),
-                            );
+                                );
                             });
-    });
-
                     });
+
+                });
             }
         }
     }

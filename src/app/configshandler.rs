@@ -1,6 +1,13 @@
 use eframe::epaint::tessellator::path;
 use serde::{Serialize, Deserialize};
 use std::fs;
+use std::path::{Path,PathBuf};
+
+
+enum DBTypes{
+    Access,
+    SQLite,
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Placeholder {
@@ -17,6 +24,7 @@ pub struct Config {
     pub delete_reservation_name: String,
     pub custom_templates_name: Vec<String>,
     pub placeholders: Vec<Placeholder>,
+    pub db_type: DBTypes, 
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -50,9 +58,21 @@ impl Template {
     }
 }
 
-pub fn create_default_config(path: & str) -> std::io::Result<()> {
+pub fn configs_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("configs")
+}
+
+fn ensure_parent_dir(path: &Path) -> std::io::Result<()> {
+    if let Some(parent) = std::path::Path::new(path).parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    Ok(())
+}
+pub fn create_default_config(path: &Path) -> std::io::Result<()> {
     let default_config = Config {
-        templates_file_path: String::from("configs/templates.json"),
+        templates_file_path: String::from("templates.json"),
         new_reservation_name: String::from("rezerwacja preset"),
         update_reservation_name: String::from("aktualizacja preset"),
         delete_reservation_name: String::from("odwołanie preset"),
@@ -69,26 +89,31 @@ pub fn create_default_config(path: & str) -> std::io::Result<()> {
                 example: String::from("Twoja firma"),
             }
         ],
+        db_type: Access,
     };
 
+    ensure_parent_dir(path)?;
     let config_json = serde_json::to_string_pretty(&default_config).expect("Failed to serialize default config");
     fs::write(path, config_json).expect("Failed to write default config to file");
     Ok(())
 }
 
-pub fn change_config(path: &str, new_config: &Config) -> std::io::Result<()> {
+pub fn change_config(path: &Path, new_config: &Config) -> std::io::Result<()> {
+    ensure_parent_dir(path)?;
     let config_json = serde_json::to_string_pretty(new_config).expect("Failed to serialize new config");
     fs::write(path, config_json).expect("Failed to write new config to file");
     Ok(())
 }
 
-pub fn load_config(path: & str) -> std::io::Result<Config> {
+pub fn load_config(path: &Path) -> std::io::Result<Config> {
+    ensure_parent_dir(path)?;
     let config_json = fs::read_to_string(path)?;
     let config: Config = serde_json::from_str(&config_json).expect("Failed to deserialize config");
     Ok(config)
 }
 
-pub fn load_templates(path: &str) -> std::io::Result<Vec<Template>> {
+pub fn load_templates(path: &Path) -> std::io::Result<Vec<Template>> {
+    ensure_parent_dir(path)?;
     let templates_json = fs::read_to_string(path)?;
     let template_configs: TemplateConfigs = serde_json::from_str(&templates_json)
         .expect("Failed to deserialize templates");
