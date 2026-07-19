@@ -3,8 +3,8 @@ use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::{Path,PathBuf};
 
-
-enum DBTypes{
+#[derive(Serialize, Deserialize, Clone)]
+pub enum DBTypes{
     Access,
     SQLite,
 }
@@ -25,6 +25,7 @@ pub struct Config {
     pub custom_templates_name: Vec<String>,
     pub placeholders: Vec<Placeholder>,
     pub db_type: DBTypes, 
+    pub db_path: Option<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -89,7 +90,8 @@ pub fn create_default_config(path: &Path) -> std::io::Result<()> {
                 example: String::from("Twoja firma"),
             }
         ],
-        db_type: Access,
+        db_type: DBTypes::Access,
+        db_path: None,
     };
 
     ensure_parent_dir(path)?;

@@ -1,5 +1,6 @@
 mod window;
 mod app;
+mod dbadapt;
 
 
 use app::App;

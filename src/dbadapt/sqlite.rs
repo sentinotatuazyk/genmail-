@@ -1,33 +1,37 @@
-use odbc_api::{Environment, Connection, ConnectionOptions};
+use odbc_api::{Connection, ConnectionOptions};
 use crate::app::configshandler::Config;
 use super::DBConnection;
 use super::odbc_env;
 use std::path::Path;
 use super::DBError;
 
-pub struct AccessConnection {
-    conn: Connection<'static>, 
+pub struct SqliteConnection {
+    conn: Connection<'static>,
 }
 
-impl AccessConnection{
+impl SqliteConnection {
     pub fn connect(db_path: &Path) -> Result<Self, DBError> {
-        let connection_string = format!("Driver={{Microsoft Access Driver (*.mdb, *.accdb)}}; Dbq={};",
-        db_path.display());
+        let connection_string = format!(
+            "Driver={{SQLite3 ODBC Driver}}; Database={};",
+            db_path.display()
+        );
 
-        let conn = odbc_env().connect_with_connection_string(&connection_string,
-        ConnectionOptions::default()
+        let conn = odbc_env().connect_with_connection_string(
+            &connection_string,
+            ConnectionOptions::default(),
         )?;
         Ok(Self{conn})
     }
 }
 
-impl DBConnection for AccessConnection {
+impl DBConnection for SqliteConnection{
     fn execute(&self, sql: &str) -> Result<(), DBError> {
         self.conn.execute(sql, (), None)?;
         Ok(())
     }
-    
+
     fn query_rows(&self, sql: &str) -> Result<Vec<Vec<String>>, DBError> {
         todo!()
     }
+
 }
