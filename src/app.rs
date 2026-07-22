@@ -3,7 +3,7 @@ pub mod configshandler;
 use crate::dbadapt;
 use std::{default, fs};
 use eframe::egui::{self, Pos2};
-use configshandler::{Config, Template, DefaultTemplate, load_config, load_templates, find_template_by_label, configs_dir};
+use configshandler::{Config, Template, DefaultTemplate, load_config, load_templates, find_template_by_label, configs_dir, add_template, TemplateTypes};
 
 
 #[derive(Clone ,Copy, PartialEq, )]
@@ -13,9 +13,16 @@ enum SelectedPanel {
     Right,
 }
 
+#[derive(Clone, Copy, PartialEq, )]
+enum ConfStage {
+    First,
+    Second,
+}
+
 enum Screen {
     Home,
     FirstConfiguration{
+        stage: ConfStage,
         editor_text: String,
         editor_body: String,
         editor_label: String,
@@ -66,6 +73,7 @@ impl Default for App {
             Screen::Home
         } else {
             Screen::FirstConfiguration {
+                stage: ConfStage::First,
                 editor_text: String::new(),
                 editor_body: String::new(),
                 editor_label: String::new(),
@@ -88,7 +96,7 @@ impl eframe::App for App {
                 });
             }
             // Ekran konfiguracji, który wyświetla szablony rezerwacji i pozwala użytkownikowi wybrać domyślny szablon
-            Screen::FirstConfiguration { editor_text, editor_body, editor_label, default_template, selected_panel, .. } => {
+            Screen::FirstConfiguration { editor_text, stage, editor_body, editor_label, default_template, selected_panel, .. } => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     let heading = ui.heading("Hej, wybierz szablon rezerwacji, który chcesz wybrać jako domyślny");
                     
@@ -145,21 +153,18 @@ impl eframe::App for App {
                             .inner_margin(egui::Margin::same(12.0))
                             .show(ui, |ui| {
                                 ui.set_min_width(300.0);
-                                ui.label("Twoj szablon:\n {{tag}} -> Symbol wycieczki\n {{date}} -> Data Wycieczki\n {{clients}} -> Klienci\n {{creds}} -> Imie i Nazwisko piszacego\n {{signature}} -> Stopkafirmy");
+                                ui.label("Twoj szablon:\n {{tag}} -> Symbol wycieczki\n {{date}} -> Data Wycieczki\n {{clients}} -> Klienci\n {{creds}} -> Imie i Nazwisko piszacego\n {{signature}} -> Stopka firmy");
                                 ui.add(
                                  egui::TextEdit::multiline(editor_text)
                                      .desired_width(f32::INFINITY)
                                      .desired_rows(15),
-                                );
+                                )
                             });
 
-                        let right_response = ui.interact(
-                            right_frame.response.rect,
-                            ui.id().with("right_panel"),
-                            egui::Sense::click(),
-                        );
+                        let right_response = right_frame.inner;
 
-                        if right_response.clicked() {
+                        if right_response.clicked() || right_response.gained_focus()
+                        {
                             *selected_panel = SelectedPanel::Right;
                         }
 
@@ -176,7 +181,20 @@ impl eframe::App for App {
                                 .rounding(egui::Rounding::same(8.0))
                                 .inner_margin(egui::Margin::same(12.0))
                                 .show(ui, |ui| {
-                                    ui.add(egui::Button::new("Zapisz"));
+                                    if ui.add_enabled(*selected_panel != SelectedPanel::NONE, egui::Button::new("Zapisz")).clicked(){
+                                        match *selected_panel{
+                                            SelectedPanel::Left =>{
+                                                *stage = ConfStage::Second;
+                                            },
+                                            SelectedPanel::Right => {
+                                                add_template(editor_text.clone(), TemplateTypes::NewRes ).expect("Failed to add new template");
+                                                *stage = ConfStage::Second;  
+                                            },
+                                            SelectedPanel::NONE => {
+                                                println!("JAK");
+                                            },
+                                        }
+                                    }
                                 });
                         });
                 });
