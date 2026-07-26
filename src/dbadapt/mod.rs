@@ -19,7 +19,8 @@ pub(super) fn odbc_env() -> &'static Environment {
 
 pub trait DBConnection {
     fn execute(&self, sql: &str) -> Result<(), DBError>;
-    fn query_rows(&self, sql: &str) -> Result<Vec<Vec<String>>, DBError>;
+    fn query_rows(&self, sql: &str) -> Result<(Vec<String>,Vec<Vec<String>>), DBError>;
+    fn list_tables(&self) -> Result<Vec<String>, DBError>;
     fn is_configured(&self) ->bool {false}
 }
 
@@ -28,12 +29,15 @@ pub fn connect(config: &Config) -> Result<Box<dyn DBConnection>, DBError> {
     match config.db_type {
         DBTypes::Access => Ok(Box::new(AccessConnection::connect(db_path)?)),
         DBTypes::SQLite => Ok(Box::new(SqliteConnection::connect(db_path)?)),
+        DBTypes::None => 
+            Err(DBError::ConnectToNone),
     }
 }
 
 #[derive(Debug)]
 pub enum DBError{
     NotConfigured,
+    ConnectToNone,
     Odbc(odbc_api::Error),
 }
 
@@ -47,6 +51,7 @@ impl std::fmt::Display for DBError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self{
             DBError::NotConfigured =>write!(f, "Baza danych nie zostala jeszcze skonfigurowana!"),
+            DBError::ConnectToNone => write!(f, "Spróbowano połączyć się z bazą danych typu None!"),
             DBError::Odbc(e) => write!(f, "Blad ODBC: {e}"),
         }
     }

@@ -7,11 +7,11 @@ impl DBConnection for NullConnection {
         Err(DBError::NotConfigured)
     }
 
-    fn query_rows(&self, _sql: &str) -> Result<Vec<Vec<String>>, DBError> {
+    fn query_rows(&self, _sql: &str) -> Result<(Vec<String>, Vec<Vec<String>>), DBError> {
         Err(DBError::NotConfigured)
     }
 
-    fn is_configured(&self) -> bool {
-        false
+    fn list_tables(&self) -> Result<Vec<String>, DBError> {
+        Err(DBError::NotConfigured)
     }
 }

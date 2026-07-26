@@ -16,6 +16,6 @@
       "example": "Twoja firma"
     }
   ],
-  "db_type": "Access",
-  "db_path": null
+  "db_type": "SQLite",
+  "db_path": "/home/konrad/Dokumenty/baza_danych.db"
 }

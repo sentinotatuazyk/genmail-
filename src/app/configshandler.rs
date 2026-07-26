@@ -3,10 +3,22 @@ use std::fs;
 use std::path::{Path,PathBuf};
 use regex::Regex;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum DBTypes{
+    None,
     Access,
     SQLite,
+}
+
+impl std::fmt::Display for DBTypes {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let s = match self {
+            DBTypes::None => "Brak",
+            DBTypes::Access => "MS Access",
+            DBTypes::SQLite => "SQLite",
+        };
+        write!(f, "{}", s)
+    } 
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -15,6 +27,18 @@ pub enum TemplateTypes {
     NewRes,
     UpdateRes,
     CancelRes,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum ConfigVar {
+    TemplatesFilePath(String),
+    NewReservationName(String),
+    UpdateReservationName(String),
+    DeleteReservationName(String),
+    CustomTemplatesName(Vec<String>),
+    Placeholders(Vec<Placeholder>),
+    DBtype(DBTypes), 
+    DBpath(Option<PathBuf>),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -119,7 +143,7 @@ pub fn create_default_config(path: &Path) -> std::io::Result<()> {
                 example: String::from("Twoja firma"),
             }
         ],
-        db_type: DBTypes::Access,
+        db_type: DBTypes::None,
         db_path: None,
     };
 
@@ -129,10 +153,48 @@ pub fn create_default_config(path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+pub fn set_default_template(ttype: TemplateTypes, label: String) -> std::io::Result<()> {
+    let config_path = configs_dir().join("config.json");
+    let mut config = load_config(&config_path)?;
+
+    match ttype {
+        TemplateTypes::NewRes =>config.new_reservation_name = label,
+        TemplateTypes::UpdateRes => config.update_reservation_name = label,
+        TemplateTypes::CancelRes => config.delete_reservation_name = label,
+        TemplateTypes::None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Nie mozna ustawić domyślnego szablonu dla typu None",
+            ));
+        }
+    }
+
+    change_config(&config_path, &config)?;
+    Ok(())
+}
+
 pub fn change_config(path: &Path, new_config: &Config) -> std::io::Result<()> {
     ensure_parent_dir(path)?;
     let config_json = serde_json::to_string_pretty(new_config).expect("Failed to serialize new config");
     fs::write(path, config_json).expect("Failed to write new config to file");
+    Ok(())
+}
+
+pub fn change_config_field(val: ConfigVar) ->std::io::Result<()> {
+    let config_path = configs_dir().join("config.json");
+    let mut config = load_config(&config_path)?;
+    
+    match val {
+        ConfigVar::TemplatesFilePath(v) => config.templates_file_path = v,
+        ConfigVar::NewReservationName(v) => config.new_reservation_name = v,
+        ConfigVar::UpdateReservationName(v) => config.update_reservation_name = v,
+        ConfigVar::DeleteReservationName(v) => config.delete_reservation_name = v,
+        ConfigVar::CustomTemplatesName(v) => config.custom_templates_name = v,
+        ConfigVar::Placeholders(v) => config.placeholders = v,
+        ConfigVar::DBtype(v) => config.db_type = v,
+        ConfigVar::DBpath(v) => config.db_path = v,
+    }
+    change_config(&config_path, &config)?;
     Ok(())
 }
 
@@ -204,7 +266,7 @@ pub fn find_placeholders_in_body (body:&str) -> Vec<Placeholder> {
         .collect()
 }
 
-pub fn add_template(body: String, ttype: TemplateTypes) -> std::io::Result<()>{
+pub fn add_template(body: String, ttype: TemplateTypes) -> std::io::Result<String>{
     let path = configs_dir().join("templates.json");
 
     let mut templates = if path.exists() {
@@ -221,7 +283,7 @@ pub fn add_template(body: String, ttype: TemplateTypes) -> std::io::Result<()>{
         
     let label = format!("custom{}",max_number+1);
     let placeholders = find_placeholders_in_body(&body);
-    let new_template = Template::new(ttype, label, String::new(), body.clone(),placeholders);
+    let new_template = Template::new(ttype, label.clone(), String::new(), body.clone(),placeholders);
 
     templates.push(new_template);
     
@@ -231,5 +293,5 @@ pub fn add_template(body: String, ttype: TemplateTypes) -> std::io::Result<()>{
         .expect("Failed to serialize templates");
     fs::write(&path,json)?;
 
-    Ok(())
+    Ok(label)
 }
